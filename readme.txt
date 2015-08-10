@@ -9,6 +9,14 @@ A widget to show your live status from ustream and a video preview.
 == Description ==
 A widget to show your live status from ustream and a video preview.
 
+=== Feautures ===
+* Ajax Callback for Live Status Check
+* Caching in file system to reduce API requests
+* Video Player on Widget
+* Pop-Out Full size player
+* Fully customizable messages and images
+* Incremental Ajax timeout, to reduce client load after some time
+
 == Changelog ==
 == 1.0 ==
 Initial version

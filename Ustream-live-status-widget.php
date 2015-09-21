@@ -283,7 +283,7 @@ class UstreamLiveStatusWidget extends WP_Widget {
 			echo '<p class="wp_widget_plugin_text">'.$instance['WidgetText'].'</p>';
 		}
 		?>
-				<button <?php if( $instance['FullVideoPage'] ) { echo 'onclick="video_pop();"'; } ?> id="LiveButton" style="width: 140px; height: 35px; margin: 4px 40px 4px 40px;" title="<?php echo $instance['OfflineSlug']; ?>">
+				<button <?php if( $instance['FullVideoPage'] ) { echo 'onclick="video_pop();"'; } ?> id="LiveButton" style="width: 140px; display: inherit; height: 35px; margin: 4px auto 4px auto;" title="<?php echo $instance['OfflineSlug']; ?>">
 					<img src="<?php echo plugin_dir_url( __FILE__ ); ?>offline.png" style="height: 26px; vertical-align: middle;" alt="<?php echo $instance['OfflineMsg']; ?>" title="<?php echo $instance['OfflineMsg']; ?>" /><span><?php echo $instance['OfflineSlug']; ?></span>
 				</button>
 			</div>

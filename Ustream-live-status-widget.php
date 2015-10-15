@@ -12,12 +12,22 @@ Author URI: http://codescar.eu
 
 class UstreamLiveStatusWidget extends WP_Widget {
 
+	private $instance;
+
 	static $textDomain = "UstreamLiveStatus";
 	// constructor
 	public function UstreamLiveStatusWidget() {
 		parent::WP_Widget('UstreamLiveStatusWidget', $name = __('Ustreal Live Status Widget', self::$textDomain ),
 			array( 'description' => __( 'A widget to see the status of your live streaming in Ustream and embeded video player.', self::$textDomain ) )
 		);
+
+	}
+
+	public function init(){
+		register_widget( "UstreamLiveStatusWidget" );
+
+		add_action( 'wp_ajax_UstreamAjax', array( $this, 'getAjax' ) );
+		add_action( 'wp_ajax_nopriv_UstreamAjax', array( $this, 'getAjax' ) );
 	}
 
 	private function renderFormInput( $fieldName, $fieldLabel, $inputValue = "", $inputType = "text", $inputExtraAttr = "" ){
@@ -65,6 +75,9 @@ class UstreamLiveStatusWidget extends WP_Widget {
 
 			$instance['WidgetTitle']       = esc_attr($instance['WidgetTitle']);
 			$instance['WidgetText']        = esc_attr($instance['WidgetText']);
+
+			$instance['AutoPlay']          = esc_attr($instance['AutoPlay']);
+			$instance['PlayerAutoResize']  = esc_attr($instance['PlayerAutoResize']);
 		} else {
 			$instance = array();
 			$instance['UID']               = "";
@@ -92,6 +105,9 @@ class UstreamLiveStatusWidget extends WP_Widget {
 
 			$instance['WidgetTitle']       = "Your title here";
 			$instance['WidgetText']        = "Your text here";
+
+			$instance['AutoPlay']          = true;
+			$instance['PlayerAutoResize']  = true;
 		}
 
 		$this->renderFormInput( "WidgetTitle", "Widget Title", $instance['WidgetTitle']);
@@ -125,6 +141,10 @@ class UstreamLiveStatusWidget extends WP_Widget {
 		$this->renderFormInput( "FullVideoPage", "Full Page Video Player", "true", "checkbox", checked( $instance['FullVideoPage'], 'true', false ) );
 		$this->renderFormInput( "FullVideoHeight", "Full Video Player Height(in px)", $instance['FullVideoHeight'], "number", "min=\"40\" max=\"1080\"");
 		$this->renderFormInput( "FullVideoWidth", "Full Video Player Width(in px)", $instance['FullVideoWidth'],  "number", "min=\"40\" max=\"1080\"");
+		echo "<hr/>";
+
+		$this->renderFormInput( "AutoPlay", "Video Auto Play", "true", "checkbox", checked( $instance['AutoPlay'] , 'true', false ) );
+		$this->renderFormInput( "PlayerAutoResize", "Auto Resize Player", "true", "checkbox", checked( $instance['PlayerAutoResize'] , 'true', false ) );
 
 	}
 
@@ -158,23 +178,22 @@ class UstreamLiveStatusWidget extends WP_Widget {
 		$instance['WidgetTitle']       = strip_tags($new_instance['WidgetTitle']);
 		$instance['WidgetText']        = strip_tags($new_instance['WidgetText']);
 
+		$instance['AutoPlay']          = strip_tags($new_instance['AutoPlay']);
+		$instance['PlayerAutoResize']  = strip_tags($new_instance['PlayerAutoResize']);
+
 		return $instance;
 	}
 
-	// display widget
-	public function widget($args, $instance) {
-		extract( $args );
-		// these are the widget options
-		$title = apply_filters('widget_title', $instance['WidgetTitle']);
+	public function footer_script( ){
 		$ajax_url = admin_url('admin-ajax.php');
 
-		?>
-			<script type="text/javascript">
-				var timeout = <?php echo $instance['JsInitialTimeout']; ?>;
-				var MAXtimeout = <?php echo $instance['JsMAXtimeout']; ?>;
-				var UID = <?php echo $instance['UID']; ?>;
+	    ?>
+	    <script type="text/javascript">
+				var timeout = <?php echo $this->instance['JsInitialTimeout']; ?>;
+				var MAXtimeout = <?php echo $this->instance['JsMAXtimeout']; ?>;
+				var UID = <?php echo $this->instance['UID']; ?>;
 
-				<?php if( $instance['FullVideoPage'] ) : ?>
+				<?php if( $this->instance['FullVideoPage'] ) : ?>
 					function video_pop(){
 						jQuery.ajax({
 							url: '<?php echo $ajax_url; ?>',
@@ -186,8 +205,8 @@ class UstreamLiveStatusWidget extends WP_Widget {
 							},
 
 							success: function (data) {
-								var popOut = window.open( "", "<?php echo $instance['WidgetTitle']; ?>",
-									"width=<?php echo $instance['FullVideoWidth']+50; ?>,height=<?php echo $instance['FullVideoHeight']+130; ?>" );
+								var popOut = window.open( "", "<?php echo $this->instance['WidgetTitle']; ?>",
+									"width=<?php echo $this->instance['FullVideoWidth']+50; ?>,height=<?php echo $this->instance['FullVideoHeight']+130; ?>" );
 								popOut.document.write(data);
 							}
 						});
@@ -216,14 +235,14 @@ class UstreamLiveStatusWidget extends WP_Widget {
 							if(data != "false"){
 								//Status is active!
 								if(!online) {
-									jQuery("#LiveButton img").attr("src", "<?php echo $instance['OnlineImg']; ?>");
-									jQuery("#LiveButton img").attr("alt", "<?php echo $instance['OnlineMsg']; ?>");
-									jQuery("#LiveButton img").attr("title", "<?php echo $instance['OnlineMsg']; ?>");
-									jQuery("#LiveButton span").text("<?php $instance['OnlineSlug']; ?>");
-									jQuery("#LiveButton").attr("title", "<?php echo $instance['OnlineMsg']; ?>");
+									jQuery("#LiveButton img").attr("src", "<?php echo $this->instance['OnlineImg']; ?>");
+									jQuery("#LiveButton img").attr("alt", "<?php echo $this->instance['OnlineMsg']; ?>");
+									jQuery("#LiveButton img").attr("title", "<?php echo $this->instance['OnlineMsg']; ?>");
+									jQuery("#LiveButton span").text("<?php $this->instance['OnlineSlug']; ?>");
+									jQuery("#LiveButton").attr("title", "<?php echo $this->instance['OnlineMsg']; ?>");
 									UID = data;
 
-									<?php if( $instance['VideoPreview'] ) : ?>
+									<?php if( $this->instance['VideoPreview'] ) : ?>
 										jQuery.ajax({
 											url: '<?php echo $ajax_url; ?>',
 											type: 'POST',
@@ -244,13 +263,13 @@ class UstreamLiveStatusWidget extends WP_Widget {
 							}else {
 								if (online) {
 
-									jQuery("#LiveButton img").attr("src", "<?php echo $instance['OfflineImg']; ?>");
-									jQuery("#LiveButton img").attr("alt", "<?php echo $instance['OfflineMsg']; ?>");
-									jQuery("#LiveButton img").attr("title", "<?php echo $instance['OfflineMsg']; ?>");
-									jQuery("#LiveButton span").text("<?php echo $instance['OfflineSlug']; ?>");
-									jQuery("#LiveButton").attr("title", "<?php echo $instance['OfflineMsg']; ?>");
+									jQuery("#LiveButton img").attr("src", "<?php echo $this->instance['OfflineImg']; ?>");
+									jQuery("#LiveButton img").attr("alt", "<?php echo $this->instance['OfflineMsg']; ?>");
+									jQuery("#LiveButton img").attr("title", "<?php echo $this->instance['OfflineMsg']; ?>");
+									jQuery("#LiveButton span").text("<?php echo $this->instance['OfflineSlug']; ?>");
+									jQuery("#LiveButton").attr("title", "<?php echo $this->instance['OfflineMsg']; ?>");
 
-									<?php if( $instance['VideoPreview'] ) : ?>
+									<?php if( $this->instance['VideoPreview'] ) : ?>
 										jQuery("#VideoPreview").hide("slow");
 									<?php endif; ?>
 								}
@@ -264,7 +283,18 @@ class UstreamLiveStatusWidget extends WP_Widget {
 					});
 				}
 			</script>
-		<?php
+			<?php
+	}
+	// display widget
+	public function widget($args, $instance) {
+
+		$this->instance = $instance;
+		add_action('wp_footer', array( $this, 'footer_script' ) );
+
+		extract( $args );
+		// these are the widget options
+		$title = apply_filters('widget_title', $instance['WidgetTitle']);
+
 
 		echo $before_widget;
 		// Display the widget
@@ -328,9 +358,10 @@ class UstreamLiveStatusWidget extends WP_Widget {
 		return ($resultsArray['results'] == "live") ? $UID : false;
 	}
 
-	private static function get_player($UID, $WIDTH = 480, $HEIGHT = 302, $AUTOPLAY = "false"){
+	private static function get_player($UID, $WIDTH = 480, $HEIGHT = 302, $AUTOPLAY = "false", $AUTORESIZE = true){
 		$player_object = '
-				<object width="'. $WIDTH .'" height="'. $HEIGHT .'" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000">
+				<object width="'. $WIDTH .'" height="'. $HEIGHT .'" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
+				class="UstreavVideoPlayer">
 				<param name="flashvars" value="cid='.$UID.'&amp;autoplay='. $AUTOPLAY .'"/>
 				<param name="allowfullscreen" value="true"/>
 				<param name="allowscriptaccess" value="always"/>
@@ -338,6 +369,43 @@ class UstreamLiveStatusWidget extends WP_Widget {
 				<param name="src" value="http://www.ustream.tv/flash/viewer.swf"/>
 				<embed flashvars="cid='.$UID.'&amp;autoplay='. $AUTOPLAY .'" width="'. $WIDTH .'" height="'. $HEIGHT .'" allowfullscreen="true" allowscriptaccess="always" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash"></embed>
 			</object>';
+
+		if( $AUTORESIZE )
+		{
+
+			$player_object .= '
+				<script type="text/javascript">
+
+					jQuery().ready(function(){
+						jQuery(\'.UstreavVideoPlayer embed\').each(function( index ) {
+							  jQuery(this).height(jQuery(this).width() * 9 /16 );
+							});
+					});
+					jQuery( window ).resize(function() {
+						jQuery(\'.UstreavVideoPlayer embed\').each(function( index ) {
+							  jQuery(this).height(jQuery(this).width() * 9 /16 );
+							});
+					});
+				</script>
+				<style type="text/css">
+					.UstreavVideoPlayer embed{
+						min-width: '. $WIDTH .'px;
+						min-height: '. $HEIGHT .'px;
+						width: 100%;
+					}
+				</style>';
+
+		}else{
+			$player_object .= '
+			<style type="text/css">
+				.UstreavVideoPlayer embed{
+					width: '. $WIDTH .'px;
+					height: '. $HEIGHT .'px;
+				}
+			</style>';
+
+		}
+
 		return $player_object;
 	}
 
@@ -365,7 +433,7 @@ class UstreamLiveStatusWidget extends WP_Widget {
 
 			$instance = $settings[$WID];
 
-			echo self::get_player( $instance['UID'], $instance['VideoWidth'], $instance['VideoHeight'], "true" );
+			echo self::get_player( $instance['UID'], $instance['VideoWidth'], $instance['VideoHeight'], $instance['AutoPlay'] );
 		}
 		elseif( isset( $_REQUEST['popOut'] ) ){
 			$WID = intval( $_REQUEST['WID'] );
@@ -386,7 +454,7 @@ class UstreamLiveStatusWidget extends WP_Widget {
 				<body>
 					<h1><?php echo $instance['WidgetTitle']; ?></h1>
 					<p><?php echo $instance['WidgetText']; ?></p>
-					<?php echo self::get_player( $instance['UID'], $instance['FullVideoWidth'], $instance['FullVideoHeight'] ); ?>
+					<?php echo self::get_player( $instance['UID'], $instance['FullVideoWidth'], $instance['FullVideoHeight'], $instance['PlayerAutoResize'] ); ?>
 				</body>
 				</html>
 			<?php
@@ -394,9 +462,34 @@ class UstreamLiveStatusWidget extends WP_Widget {
 			wp_die();
 		}
 	}
-}
+
+	/**
+	* @param $atts array the parameters for the player
+    *
+    * example: [UstreamPlayer uid="12345" width="480" height="302" autoplay="true" playerautoresize="true"]
+	*
+	* @return string the result in html
+	*/
+	public static function getPlayer( $atts ){
+		$args = shortcode_atts( array(
+				'uid'       => '0',
+				'width'     => '480',
+				'height'    => '302',
+				'autoplay'  => 'true',
+				'playerautoresize' => true,
+			),
+			$atts );
+
+		$player = self::get_player( $args['uid'], $args['width'], $args['height'], $args['autoplay'], $args['playerautoresize'] );
+
+		return $player;
+	}
+
+
+}   //endClass
 
 // register widget
-add_action( 'widgets_init', create_function( '', 'return register_widget( "UstreamLiveStatusWidget" ); ' ) );
-add_action( 'wp_ajax_UstreamAjax', array( 'UstreamLiveStatusWidget', 'getAjax' ) );
-add_action( 'wp_ajax_nopriv_UstreamAjax', array( 'UstreamLiveStatusWidget', 'getAjax' ) );
+$widget = new UstreamLiveStatusWidget();
+add_action( 'widgets_init', array( $widget, 'init' ) );
+add_shortcode( 'UstreamPlayer', array( 'UstreamLiveStatusWidget', 'getPlayer' ) );
+

@@ -4,7 +4,7 @@
 Plugin Name: Ustream Live Status Widget
 Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
 Description: A widget to show your live status from ustream and a video preview.
-Version: 1.0
+Version: 1.1
 Author: lion2486
 Author URI: http://codescar.eu
 
@@ -359,7 +359,19 @@ class UstreamLiveStatusWidget extends WP_Widget {
 	}
 
 	private static function get_player($UID, $WIDTH = 480, $HEIGHT = 302, $AUTOPLAY = "false", $AUTORESIZE = true){
-		$player_object = '
+	    $player_object = '
+	        <iframe 
+                src="http://www.ustream.tv/embed/'. $UID .'?html5ui&autoplay='. $AUTOPLAY .'" 
+                style="border: 0; width: 100%; height: calc( 100vh - 144px );" 
+                webkitallowfullscreen 
+                allowfullscreen 
+                frameborder="no" 
+                width="'. $WIDTH .'" 
+                height="'. $HEIGHT .'">
+            </iframe>
+	    ';
+		/* Old player code
+		 * $player_object = '
 				<object width="'. $WIDTH .'" height="'. $HEIGHT .'" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
 				class="UstreavVideoPlayer">
 				<param name="flashvars" value="cid='.$UID.'&amp;autoplay='. $AUTOPLAY .'"/>
@@ -368,7 +380,7 @@ class UstreamLiveStatusWidget extends WP_Widget {
 				<param name="autoplay" value="'. $AUTOPLAY .'" />
 				<param name="src" value="http://www.ustream.tv/flash/viewer.swf"/>
 				<embed flashvars="cid='.$UID.'&amp;autoplay='. $AUTOPLAY .'" width="'. $WIDTH .'" height="'. $HEIGHT .'" allowfullscreen="true" allowscriptaccess="always" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash"></embed>
-			</object>';
+			</object>';*/
 
 		if( $AUTORESIZE )
 		{
